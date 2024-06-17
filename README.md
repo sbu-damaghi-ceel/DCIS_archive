@@ -1,18 +1,17 @@
-# Repository: Analysis for [Eco-evolutionary Guided Pathomic Analysis to Predict DCIS Upstaging]
+# Repository: Analysis for Eco-evolutionary Guided Pathomic Analysis to Predict DCIS Upstaging
 
-This repository contains the code and data analysis for the research paper titled "[Eco-evolutionary Guided Pathomic Analysis to Predict DCIS Upstaging]". The aim of this study is to predict the upstaging status of DCIS patients with eco-evolutionary biomarkers. The analysis steps are meticulously documented in the `pipeline.sh` script, which orchestrates the entire workflow from data preprocessing to result generation.
+This repository contains the code and data analysis for the research paper titled "Eco-evolutionary Guided Pathomic Analysis to Predict DCIS Upstaging". The aim of this study is to predict the upstaging status of DCIS patients with eco-evolutionary biomarkers. The analysis steps are meticulously documented in the `pipeline.sh` script, which orchestrates the entire workflow from data preprocessing to result generation.
 
 ## Table of Contents
 - [Introduction](#introduction)
 - [Installation](#installation)
-- [Usage](#usage)
 - [Analysis Pipeline](#analysis-pipeline)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Introduction
 
-In this study, we [provide a brief summary of the study, including the main objectives, methods, and findings]. This repository contains all the necessary code and data to reproduce the analyses presented in the paper.
+This study focuses on the ecological dynamics of ductal carcinoma in situ (DCIS), an early-stage breast cancer, to improve prediction of disease progression through novel biomarker identification.. This repository contains all the necessary code to reproduce the analyses presented in the paper, patholomics image data is available at [data repo]
 
 ## Installation
 
@@ -33,14 +32,6 @@ Install the required dependencies:
 
 ```bash
 pip install -r requirements.txt
-```
-
-## Usage
-
-To reproduce the analysis, run the `pipeline.sh` script. This script will execute all the steps in the analysis pipeline, including data preprocessing, model training, and result generation.
-
-```bash
-bash pipeline.sh
 ```
 
 ## Analysis Pipeline
