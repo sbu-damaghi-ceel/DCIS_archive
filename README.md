@@ -16,9 +16,8 @@ This study focuses on the ecological dynamics of ductal carcinoma in situ (DCIS)
 
 To run the code in this repository, you need to have the following software installed:
 
-- [Software 1] (e.g., Python 3.8+)
-- [Software 2] (e.g., R 4.0+)
-- [Software 3] (e.g., Docker)
+- Python 3.11
+- R 4.0+
 
 Clone the repository:
 
@@ -27,9 +26,11 @@ git clone https://github.com/yourusername/repository-name.git
 cd repository-name
 ```
 
-Install the required dependencies:
+Install the required dependencies in a new conda environment:
 
 ```bash
+conda create --name dcis_analysis python=3.11
+conda activate dcis_analysis
 pip install -r requirements.txt
 ```
 
