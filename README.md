@@ -1,6 +1,6 @@
-# Repository: Analysis for [Paper Title]
+# Repository: Analysis for [Eco-evolutionary Guided Pathomic Analysis to Predict DCIS Upstaging]
 
-This repository contains the code and data analysis for the research paper titled "[Paper Title]". The aim of this study is to [briefly describe the purpose or findings of the paper]. The analysis steps are meticulously documented in the `pipeline.sh` script, which orchestrates the entire workflow from data preprocessing to result generation.
+This repository contains the code and data analysis for the research paper titled "[Eco-evolutionary Guided Pathomic Analysis to Predict DCIS Upstaging]". The aim of this study is to predict the upstaging status of DCIS patients with eco-evolutionary biomarkers. The analysis steps are meticulously documented in the `pipeline.sh` script, which orchestrates the entire workflow from data preprocessing to result generation.
 
 ## Table of Contents
 - [Introduction](#introduction)
