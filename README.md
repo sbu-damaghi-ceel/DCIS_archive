@@ -34,9 +34,6 @@ conda activate dcis_analysis
 pip install -r requirements.txt
 ```
 
-## Analysis Pipeline
-
-Sure! Here's a description of the `pipeline.sh` script for your GitHub README:
 
 ---
 
