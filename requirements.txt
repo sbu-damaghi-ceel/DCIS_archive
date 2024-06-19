@@ -13,3 +13,4 @@ seaborn==0.13.2
 Shapely==2.0.4
 skimage==0.0
 tqdm==4.66.1
+valis_wsi==1.0.0rc12

@@ -8,7 +8,7 @@
 
 #########################################################################
 # step 2: co-register HE with IHCs using VALIS for the same patients
-#warpPoints_valis.ipynb
+# python warpPoints_valis.py
 
 #########################################################################
 # step 3: define the niches
@@ -18,7 +18,6 @@
 # step 3: extract the features
 # python computeMor_text.py
 # process_spatialFunc.ipynb
-# aggregate_and_split.ipynb
 
 #########################################################################
 # step 4: train the classifier model for ROIs of different scales
