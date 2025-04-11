@@ -360,4 +360,6 @@ out_dir = '/mnt/data10/shared/yujie/DCIS/ANALYSIS/biopsy_features/'
 process_n = 8
 python computeMor_text.py --geojson_dir /mnt/data10/shared/yujie/DCIS/cellDet_data/starDist/HEcell_starDist_geojson_biopsy --wsi_dir /mnt/data10/shared/yujie/DCIS/biopsy_img_svs/HE --out_dir /mnt/data10/shared/yujie/DCIS/ANALYSIS/biopsy_features/ --process_n 8 &
 python computeMor_text.py --geojson_dir /mnt/data10/shared/yujie/DCIS/cellDet_data/starDist/HEcell_starDist_geojson_exc44 --wsi_dir /mnt/data10/shared/yujie/DCIS/excision_batch4_5_Oct3/svs/HE --out_dir /mnt/data10/shared/yujie/DCIS/ANALYSIS/exc44_features/ --process_n 8 &
+
+python computeMor_text.py --geojson_dir /mnt/data10/shared/yujie/new_DCIS/review_exc/HE_starDist_geojson --wsi_dir /mnt/data10/shared/yujie/DCIS/excision_batch4_5_Oct3/svs/HE --out_dir /home/yxiao/review_exc/HE_cellFeatures --process_n 8 &
 """

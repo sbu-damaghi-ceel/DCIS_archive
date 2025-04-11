@@ -10,15 +10,16 @@ import os
 join = os.path.join
 import json
 
+import warnings
+from sklearn.exceptions import UndefinedMetricWarning
+
+import pdb
 import logging
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
     level=logging.INFO,  # Set the logging level to INFO
     datefmt='%Y-%m-%d %H:%M:%S'  # Date format for the log messages
 )
-import warnings
-from sklearn.exceptions import UndefinedMetricWarning
-
 # Suppress the specific warning
 warnings.filterwarnings('ignore', category=UndefinedMetricWarning)
 
@@ -43,6 +44,21 @@ def getProp(df):
     upstage_info = df_relevant[['slideId', 'Upstage']].drop_duplicates().set_index('slideId')
     pattern_proportions_final = pattern_proportions.merge(upstage_info, left_index=True, right_index=True)
     return pattern_proportions_final
+
+def addInfo(pattern_final,df_info):
+    df_info = df_info[df_info['stain']=='HE']# use HE slide number
+    df_info = df_info.set_index('slideId')
+    features = ['age_at_core_biopsy', 'race_status', 'ethnicity_status', 'core_biopsy_dcis_path',
+            'core_bx_dcis_er', 'core_bx_dcis_pr']
+
+    X = df_info[features]
+    
+    # Apply one-hot encoding to categorical features
+    X = pd.get_dummies(X, columns=['race_status', 'ethnicity_status', 
+                                    'core_biopsy_dcis_path', 
+                                    'core_bx_dcis_er', 'core_bx_dcis_pr'], drop_first=True)
+    
+    return pattern_final.merge(X, left_index=True, right_index=True)
 def train_random_forest(X, y, cv_type='kfold', refit_metric='roc_auc'):
     rf = RandomForestClassifier(random_state=42)
 
@@ -99,20 +115,23 @@ def train_random_forest(X, y, cv_type='kfold', refit_metric='roc_auc'):
 
     return best_model, best_params, results
 
-def worker_single(cluster_path,process_func):
+def worker_single(cluster_path,process_func,df_info):
     try:
         cluster_df = pd.read_csv(cluster_path)
 
         pattern_df = process_func(cluster_df)
+        pattern_df = addInfo(pattern_df,df_info)
         
         X = pattern_df.drop(columns=['Upstage'])
+        X.columns = X.columns.astype(str)
         y = pattern_df['Upstage']
+        
         _, _, results = train_random_forest(X, y)
 
-        
         return results['roc_auc_mean']
     except Exception as e:
-        #print(e)
+        logging.error(f'Error in {cluster_path}: {e}')
+        # print(e)
         return None
 def main():
     parser = argparse.ArgumentParser(description="grid search the best classifier")
@@ -128,20 +147,39 @@ def main():
         process_func = getCount
     elif args.process_type == 'prop':
         process_func = getProp
+
+    info_df = pd.read_csv('../data/clinical_data.csv')
+
     #ROI: Niche
     if args.roi_type == 'Niche':
-        for stain in ['CL']:#'CA9','LAMP2b',
-            tasks = []
-            for thres in range(10,45,5):
-                for cluster in range(3,11):
-                    cluster_path = os.path.join(args.input_dir , f'Niche/{stain}_{thres}/cluster{cluster}.csv')
+        # for stain in ['LAMP2b']:#'CA9','LAMP2b',
+        #     tasks = []
+        #     for thres in range(10,45,5):
+        #         for cluster in range(3,11):
+        #             cluster_path = os.path.join(args.input_dir , f'Niche/{stain}_{thres}/cluster{cluster}.csv')
                     
-                    tasks.append((cluster_path,process_func))
-            with mp.Pool(processes=p) as pool:
-                roc_auc_list = pool.starmap(worker_single, tasks)
-                roc_auc_array = np.array([x for x in roc_auc_list if x is not None])
-            print(f'Niche-{stain} best ROC AUC:{np.max(roc_auc_array)} at {tasks[np.argmax(roc_auc_array)][0]}')
-    # python classifier_fromCluster_multiscale.py -i ../data/Features -r Niche -pr prop -p 10 &>> ../result/Niche_log.txt &
+        #             tasks.append((cluster_path,process_func,info_df))
+            
+            
+            # with mp.Pool(processes=p) as pool:
+            #     roc_auc_list = pool.starmap(worker_single, tasks)
+            #     roc_auc_array = np.array([x for x in roc_auc_list if x is not None])
+            # logging.info(f'Niche-{stain} best ROC AUC:{np.max(roc_auc_array)} at {tasks[np.argmax(roc_auc_array)][0]}')
+        
+        stain = 'LAMP2b'
+        thres = 30
+        cluster = 8
+        cluster_path = os.path.join(args.input_dir , f'Niche/{stain}_{thres}/cluster{cluster}.csv')
+        roc_auc_mean = worker_single(cluster_path,process_func,info_df)
+        logging.info(f'Niche-{stain} best ROC AUC:{roc_auc_mean} at {cluster_path}')
+
+        stain = 'CA9'
+        thres = 30
+        cluster = 9
+        cluster_path = os.path.join(args.input_dir , f'Niche/{stain}_{thres}/cluster{cluster}.csv')
+        roc_auc_mean = worker_single(cluster_path,process_func,info_df)
+        logging.info(f'Niche-{stain} best ROC AUC:{roc_auc_mean} at {cluster_path}')
+    # python classifier_fromCluster_multiscale_withInfo.py -i ../data/Features -r Niche -pr prop -p 10 &>> ../result/Niche_log_withInfo.txt &
 
     #ROI: Duct
     if args.roi_type == 'Duct':

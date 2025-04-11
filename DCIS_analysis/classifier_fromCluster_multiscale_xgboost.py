@@ -6,9 +6,17 @@ import pandas as pd
 import argparse
 import multiprocessing as mp
 
+from xgboost import XGBClassifier
+
 import os
 join = os.path.join
 import json
+
+import warnings
+from sklearn.exceptions import UndefinedMetricWarning
+
+# Suppress the specific warning
+warnings.filterwarnings('ignore', category=UndefinedMetricWarning)
 
 import logging
 logging.basicConfig(
@@ -16,12 +24,6 @@ logging.basicConfig(
     level=logging.INFO,  # Set the logging level to INFO
     datefmt='%Y-%m-%d %H:%M:%S'  # Date format for the log messages
 )
-import warnings
-from sklearn.exceptions import UndefinedMetricWarning
-
-# Suppress the specific warning
-warnings.filterwarnings('ignore', category=UndefinedMetricWarning)
-
 
 def getCount(df):
     df_relevant = df[['slideId', 'patternId', 'Upstage']]
@@ -43,25 +45,19 @@ def getProp(df):
     upstage_info = df_relevant[['slideId', 'Upstage']].drop_duplicates().set_index('slideId')
     pattern_proportions_final = pattern_proportions.merge(upstage_info, left_index=True, right_index=True)
     return pattern_proportions_final
-def train_random_forest(X, y, cv_type='kfold', refit_metric='roc_auc'):
-    rf = RandomForestClassifier(random_state=42)
+
+def train_xgboost(X, y, cv_type='kfold', refit_metric='roc_auc'):
+    xgb = XGBClassifier(random_state=42)
 
     param_grid = {
-    'n_estimators': [10, 50, 100, 200, 500],
-    'max_depth': [None, 10, 20, 30, 40, 50],
-    'min_samples_split': [2, 5, 10],
-    'min_samples_leaf': [1, 2, 4],
-    'max_features': ['sqrt', 'log2'],
-    'bootstrap': [True, False]
+        'n_estimators': [50, 100, 200],
+        'max_depth': [3, 6, 10],
+        'learning_rate': [0.01, 0.1, 0.2],
+        'subsample': [0.6, 0.8, 1.0],
+        'colsample_bytree': [0.6, 0.8, 1.0],
+        'min_child_weight': [1, 5, 10],
+        'gamma': [0, 0.1, 0.5, 1]
     }
-    # param_grid = {
-    # 'n_estimators': [50, 100, 200],
-    # 'max_depth': [None, 10, 20],
-    # 'min_samples_split': [2, 5],
-    # 'min_samples_leaf': [1, 2],
-    # 'max_features': ['sqrt', 'log2'],  # 'auto' is equivalent to 'sqrt' in classification tasks
-    # 'bootstrap': [True]
-    # }
 
     if cv_type == 'kfold':
         cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
@@ -77,8 +73,7 @@ def train_random_forest(X, y, cv_type='kfold', refit_metric='roc_auc'):
         'roc_auc': make_scorer(roc_auc_score)
     }
 
-    
-    grid_search = GridSearchCV(estimator=rf, param_grid=param_grid, cv=cv, scoring=scoring, refit=refit_metric)
+    grid_search = GridSearchCV(estimator=xgb, param_grid=param_grid, cv=cv, scoring=scoring, refit=refit_metric)
     grid_search.fit(X, y)
 
     # Get the best model and its hyperparameters
@@ -99,6 +94,7 @@ def train_random_forest(X, y, cv_type='kfold', refit_metric='roc_auc'):
 
     return best_model, best_params, results
 
+
 def worker_single(cluster_path,process_func):
     try:
         cluster_df = pd.read_csv(cluster_path)
@@ -107,7 +103,7 @@ def worker_single(cluster_path,process_func):
         
         X = pattern_df.drop(columns=['Upstage'])
         y = pattern_df['Upstage']
-        _, _, results = train_random_forest(X, y)
+        _, _, results = train_xgboost(X, y)
 
         
         return results['roc_auc_mean']
@@ -130,18 +126,26 @@ def main():
         process_func = getProp
     #ROI: Niche
     if args.roi_type == 'Niche':
-        for stain in ['CL']:#'CA9','LAMP2b',
-            tasks = []
-            for thres in range(10,45,5):
-                for cluster in range(3,11):
-                    cluster_path = os.path.join(args.input_dir , f'Niche/{stain}_{thres}/cluster{cluster}.csv')
+        
+        for stain in ['LAMP2b']:#'CA9','LAMP2b','CL'
+            logging.info(f'Start processing {stain} Niche')
+            # tasks = []
+            # for thres in range(10,45,5):
+            #     for cluster in range(3,11):
+            #         cluster_path = os.path.join(args.input_dir , f'Niche/{stain}_{thres}/cluster{cluster}.csv')
                     
-                    tasks.append((cluster_path,process_func))
-            with mp.Pool(processes=p) as pool:
-                roc_auc_list = pool.starmap(worker_single, tasks)
-                roc_auc_array = np.array([x for x in roc_auc_list if x is not None])
-            print(f'Niche-{stain} best ROC AUC:{np.max(roc_auc_array)} at {tasks[np.argmax(roc_auc_array)][0]}')
-    # python classifier_fromCluster_multiscale.py -i ../data/Features -r Niche -pr prop -p 10 &>> ../result/Niche_log.txt &
+            #         tasks.append((cluster_path,process_func))
+            # with mp.Pool(processes=p) as pool:
+            #     roc_auc_list = pool.starmap(worker_single, tasks)
+            #     roc_auc_array = np.array([x for x in roc_auc_list if x is not None])
+            # print(f'Niche-{stain} best ROC AUC:{np.max(roc_auc_array)} at {tasks[np.argmax(roc_auc_array)][0]}')
+
+            thres = 30
+            cluster = 8
+            cluster_path = os.path.join(args.input_dir , f'Niche/{stain}_{thres}/cluster{cluster}.csv')
+            roc_auc = worker_single(cluster_path,process_func)
+            logging.info(f'Niche-{stain} best ROC AUC:{roc_auc} at {cluster_path}')
+    # python classifier_fromCluster_multiscale_xgboost.py -i ../data/Features -r Niche -pr prop -p 1 &>> ../result/Niche_log_xgboost.txt &
 
     #ROI: Duct
     if args.roi_type == 'Duct':
